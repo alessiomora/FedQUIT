@@ -1,0 +1,19 @@
+---
+# this is the config that will be loaded as default by main.py
+# Please follow the provided structure (this will ensuring all baseline follow
+# a similar configuration structure and hence be easy to customise)
+
+dataset: "cifar10"
+alpha: 0.1  # alpha = 0 --> 1 class per client, -1 homogeneous
+local_batch_size: 32
+total_clients: 10
+clients_to_analyse: 10
+total_rounds: 50
+active_clients: 1.0
+local_epochs: 1
+lr_decay: 0.998  # exponential decay per round
+algorithm: "logit"  # softmax or logit
+seed: 0
+#best_round: 200  # 22 for iid
+#last_checkpoint_retrained: 200
+#best_round: 30
