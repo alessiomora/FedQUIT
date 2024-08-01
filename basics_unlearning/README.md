@@ -1,4 +1,6 @@
-# Exploratory Experiments on Federated Unlearning
+# FedQUIT: On-Device Federated Unlearning via a Quasi-Competent Virtual Teacher
+This is the official repository for FedQUIT. We will update the readme with detailed instructions to 
+run code upon acceptance.
 
 ## Preliminaries
 The simulation code in this repository mainly leverages TensorFlow (TF). 
@@ -39,14 +41,4 @@ poetry install
 
 # activate the environment
 poetry shell
-```
-
-Create client datasets.
-
-```bash
-# cd to your basics_unlearning directory (i.e. where the `pyproject.toml` is)
-
-# run the command
-
-
 ```
