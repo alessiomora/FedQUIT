@@ -7,7 +7,7 @@ name = "can_bad_teaching" # <----- Ensure it matches the name of your baseline d
 version = "1.0.0"
 description = "Bad Teaching"
 license = "Apache-2.0"
-authors = ["Alessio Mora"]
+authors = ["Anonymous"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
