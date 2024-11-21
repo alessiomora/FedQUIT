@@ -1,6 +1,5 @@
 # FedQUIT: On-Device Federated Unlearning via a Quasi-Competent Virtual Teacher
-This is the official repository for FedQUIT. We will update the readme with detailed instructions to 
-run code upon acceptance.
+This is the official repository for FedQUIT: On-Device Federated Unlearning via a Quasi-Competent Virtual Teacher.
 
 ## Preliminaries
 The simulation code in this repository mainly leverages TensorFlow (TF). 
@@ -43,7 +42,7 @@ poetry install
 poetry shell
 ```
 
-## Creation of Client Datasets
+## Creating Client Datasets
 To exactly reproduce the label distribution we used in the paper run the following lines of code.
 Note that we use the txt files in `client_data` folder.
 
@@ -59,6 +58,7 @@ We prepared two scripts to run the experiments reported in the paper.
 Note that this scripts save model checkpoints on disk (it can occupy 20-30 GB in total).
 ```bash
 bash ./basics_unlearning/simulation_manager_cifar10.sh
+
 bash ./basics_unlearning/simulation_manager_cifar100.sh
 ```
 
