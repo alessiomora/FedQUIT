@@ -5,10 +5,10 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
-from basics_unlearning.dataset import element_norm_cifar100, normalize_img, expand_dims, \
+from federated_fedquit.dataset import element_norm_cifar100, normalize_img, expand_dims, \
     element_norm_cifar10, PaddedRandomCrop, element_norm_cifar100_train, \
     element_norm_cifar20, element_norm_cifar10_train
-from basics_unlearning.model import create_cnn_model, create_resnet18
+from federated_fedquit.model import create_cnn_model, create_resnet18
 
 
 def draw_and_save_heatmap(np_array_data, alpha_string,

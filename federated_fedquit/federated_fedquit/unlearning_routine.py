@@ -8,15 +8,15 @@ from omegaconf import DictConfig, OmegaConf
 import matplotlib as plt
 import seaborn as sns
 import pandas as pd
-from basics_unlearning.dataset import load_client_datasets_from_files, normalize_img, \
+from federated_fedquit.dataset import load_client_datasets_from_files, normalize_img, \
     get_string_distribution, expand_dims, load_selected_client_statistics, \
     get_add_unlearning_label_fn, load_label_distribution_selected_client
-from basics_unlearning.main_fl import find_last_checkpoint
-from basics_unlearning.model import create_cnn_model
-from basics_unlearning.model_kd_div import ModelKLDiv, ModelKLDivAdaptive, \
+from federated_fedquit.main_fl import find_last_checkpoint
+from federated_fedquit.model import create_cnn_model
+from federated_fedquit.model_kd_div import ModelKLDiv, ModelKLDivAdaptive, \
     ModelKLDivAdaptiveSoftmax, ModelCompetentIncompetentTeacher, ModelKLDivSoftmaxZero, \
     ModelKLDivLogitMin
-from basics_unlearning.utility import draw_and_save_heatmap, compute_kl_div, \
+from federated_fedquit.utility import draw_and_save_heatmap, compute_kl_div, \
     create_model, get_test_dataset, preprocess_ds, preprocess_ds_test
 import json
 

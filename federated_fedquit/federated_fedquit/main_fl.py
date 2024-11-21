@@ -8,14 +8,14 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 from omegaconf import DictConfig, OmegaConf
 
-from basics_unlearning.dataset import (
+from federated_fedquit.dataset import (
     load_client_datasets_from_files,
     load_selected_client_statistics,
     get_string_distribution, load_selected_clients_statistics,
     normalize_img, expand_dims, element_norm_cifar100, PaddedRandomCrop,
     get_preprocess_fn
 )
-from basics_unlearning.utility import create_model, get_test_dataset, preprocess_ds, \
+from federated_fedquit.utility import create_model, get_test_dataset, preprocess_ds, \
     compute_kl_div, preprocess_ds_test
 
 

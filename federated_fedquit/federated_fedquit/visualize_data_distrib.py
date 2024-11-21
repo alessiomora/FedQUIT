@@ -6,7 +6,7 @@ import tensorflow as tf
 import pandas as pd
 
 # Visualizing the distribution of labels on clients
-from basics_unlearning.dataset import load_label_distribution
+from federated_fedquit.dataset import load_label_distribution
 
 plt.style.use("seaborn-whitegrid")
 chart_folder = os.path.join("charts", "label_distribution")

@@ -9,12 +9,12 @@ import hydra
 import os
 import numpy as np
 
-from basics_unlearning.dataset import get_string_distribution, \
+from federated_fedquit.dataset import get_string_distribution, \
     load_client_datasets_from_files, normalize_img, expand_dims, \
     load_selected_client_statistics, load_label_distribution_selected_client
-from basics_unlearning.mia_svc import SVC_MIA, UnLearningScore
-from basics_unlearning.model import create_cnn_model
-from basics_unlearning.utility import get_test_dataset, preprocess_ds_test, create_model
+from federated_fedquit.mia_svc import SVC_MIA, UnLearningScore
+from federated_fedquit.model import create_cnn_model
+from federated_fedquit.utility import get_test_dataset, preprocess_ds_test, create_model
 
 
 @hydra.main(config_path="conf", config_name="generate_tables", version_base=None)

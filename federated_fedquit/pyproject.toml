@@ -3,7 +3,7 @@ requires = ["poetry-core>=1.4.0"]
 build-backend = "poetry.masonry.api"
 
 [tool.poetry]
-name = "basics_unlearning" # <----- Ensure it matches the name of your baseline directory containing all the source code
+name = "federated_fedquit" # <----- Ensure it matches the name of your baseline directory containing all the source code
 version = "1.0.0"
 description = "Fed Unlearning"
 license = "Apache-2.0"
@@ -12,18 +12,18 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.10.0, <3.11.0"
-#tensorflow = "2.15.0.post1"
-#tensorflow-datasets = "4.9.4"
-tensorflow-probability = "0.23.0"
-#hydra-core = "1.3.2"
+tensorflow = "2.15.0.post1"
+tensorflow-datasets = "4.9.4"
+#tensorflow-probability = "0.23.0"
+hydra-core = "1.3.2"
 #matplotlib = "3.7.1"
 #tbparse = "0.0.7"
 #seaborn = "0.13.0"
 # for cifar100
-#keras-cv = "0.8.2"
+keras-cv = "0.8.2"
 # mia svc
-#torch = "2.2.1"
-#scikit-learn = "1.4.1.post1"
+torch = "2.2.1"
+scikit-learn = "1.4.1.post1"
 
 [tool.poetry.dev-dependencies]
 isort = "==5.11.5"

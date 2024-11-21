@@ -9,9 +9,9 @@ import hydra
 import os
 
 # from imagenet import get_x_y_from_data_dict
-from basics_unlearning.dataset import get_string_distribution, \
+from federated_fedquit.dataset import get_string_distribution, \
     load_client_datasets_from_files, normalize_img, expand_dims
-from basics_unlearning.model import create_cnn_model
+from federated_fedquit.model import create_cnn_model
 
 
 def entropy(p, dim=-1, keepdim=False):
