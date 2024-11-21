@@ -42,3 +42,31 @@ poetry install
 # activate the environment
 poetry shell
 ```
+
+## Creation of Client Datasets
+To exactly reproduce the label distribution we used in the paper run the following lines of code.
+Note that we use the txt files in `client_data` folder.
+
+```bash
+python -m basics_unlearning.dataset_preparation dataset="cifar100" alpha=0.1 total_clients=10
+
+python -m basics_unlearning.dataset_preparation dataset="cifar10" alpha=0.3 total_clients=10
+
+```
+
+## Running the Simulations
+We prepared two scripts to run the experiments reported in the paper.
+Note that this scripts save model checkpoints on disk (it can occupy 20-30 GB in total).
+```bash
+bash ./basics_unlearning/simulation_manager_cifar10.sh
+bash ./basics_unlearning/simulation_manager_cifar100.sh
+```
+
+## Generating CSV Results
+We prepared two scripts to generate csv files that report individual and aggregated results.
+```bash
+python -m basics_unlearning.generate_csv_results dataset="cifar10" alpha=0.3
+
+python -m basics_unlearning.generate_csv_results dataset="cifar100" alpha=0.1
+
+```
