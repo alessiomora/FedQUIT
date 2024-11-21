@@ -4,7 +4,7 @@ This is the official repository for FedQUIT: On-Device Federated Unlearning via 
 ## Preliminaries
 The simulation code in this repository mainly leverages TensorFlow (TF). 
 Python virtual env is managed via Poetry.
-See `basics_unlearning/pyproject.toml`. To reproduce our virtual env,
+See `federated_fedquit/pyproject.toml`. To reproduce our virtual env,
 follow the instructions in the Environment Setup section of this readme.
 
 The code in this repository has been tested on Ubuntu 22.04.3,
@@ -23,7 +23,7 @@ curl https://pyenv.run | bash
 You can then install any Python version with `pyenv install <python-version>`
 (e.g. `pyenv install 3.9.17`) and set that version as the one to be used. 
 ```bash
-# cd to your basics_unlearning directory (i.e. where the `pyproject.toml` is)
+# cd to your federated_fedquit directory (i.e. where the `pyproject.toml` is)
 pyenv install 3.10.12
 
 pyenv local 3.10.12
@@ -33,7 +33,7 @@ poetry env use 3.10.12
 ```
 To build the Python environment as specified in the `pyproject.toml`, use the following commands:
 ```bash
-# cd to your basics_unlearning directory (i.e. where the `pyproject.toml` is)
+# cd to your federated_fedquit directory (i.e. where the `pyproject.toml` is)
 
 # install the base Poetry environment
 poetry install
@@ -47,9 +47,9 @@ To exactly reproduce the label distribution we used in the paper run the followi
 Note that we use the txt files in `client_data` folder.
 
 ```bash
-python -m basics_unlearning.dataset_preparation dataset="cifar100" alpha=0.1 total_clients=10
+python -m federated_fedquit.dataset_preparation dataset="cifar100" alpha=0.1 total_clients=10
 
-python -m basics_unlearning.dataset_preparation dataset="cifar10" alpha=0.3 total_clients=10
+python -m federated_fedquit.dataset_preparation dataset="cifar10" alpha=0.3 total_clients=10
 
 ```
 
@@ -57,16 +57,16 @@ python -m basics_unlearning.dataset_preparation dataset="cifar10" alpha=0.3 tota
 We prepared two scripts to run the experiments reported in the paper.
 Note that this scripts save model checkpoints on disk (it can occupy 20-30 GB in total).
 ```bash
-bash ./basics_unlearning/simulation_manager_cifar10.sh
+bash ./federated_fedquit/simulation_manager_cifar10.sh
 
-bash ./basics_unlearning/simulation_manager_cifar100.sh
+bash ./federated_fedquit/simulation_manager_cifar100.sh
 ```
 
 ## Generating CSV Results
 We prepared two scripts to generate csv files that report individual and aggregated results.
 ```bash
-python -m basics_unlearning.generate_csv_results dataset="cifar10" alpha=0.3
+python -m federated_fedquit.generate_csv_results dataset="cifar10" alpha=0.3
 
-python -m basics_unlearning.generate_csv_results dataset="cifar100" alpha=0.1
+python -m federated_fedquit.generate_csv_results dataset="cifar100" alpha=0.1
 
 ```
