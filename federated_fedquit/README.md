@@ -40,6 +40,9 @@ poetry install
 
 # activate the environment
 poetry shell
+
+# intall tensorflow + cuda gpu support (retry again if error appears)
+pip install tensorflow[and-cuda]=="2.15.0.post1"
 ```
 
 ## Creating Client Datasets

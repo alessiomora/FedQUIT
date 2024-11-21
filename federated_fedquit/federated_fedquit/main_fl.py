@@ -3,8 +3,16 @@ import os
 import shutil
 import hydra
 import numpy as np
-# os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+
+from basics_unlearning.generate_csv_results import compute_yeom_mia
+from basics_unlearning.mia_svc import SVC_MIA
+
+import logging, os
+logging.disable(logging.WARNING)
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 import tensorflow as tf
+# os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+
 import tensorflow_datasets as tfds
 from omegaconf import DictConfig, OmegaConf
 
@@ -18,9 +26,6 @@ from federated_fedquit.dataset import (
 from federated_fedquit.utility import create_model, get_test_dataset, preprocess_ds, \
     compute_kl_div, preprocess_ds_test
 
-
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-warnings.filterwarnings('ignore', category=np.VisibleDeprecationWarning)
 
 physical_devices = tf.config.list_physical_devices('GPU')
 try:
@@ -54,7 +59,7 @@ def main(cfg: DictConfig) -> None:
     print("[Start Simulation]")
     # Print parsed config
     print(OmegaConf.to_yaml(cfg))
-
+    SAVE_ROUND_CLIENTS = 200
     dataset = cfg.dataset
     alpha = cfg.alpha
     local_batch_size = cfg.local_batch_size
@@ -120,7 +125,12 @@ def main(cfg: DictConfig) -> None:
         frozen_layers = cfg.resuming_after_unlearning.frozen_layers
         learning_rate_unlearning = cfg.resuming_after_unlearning.unlearning_lr
         epochs_unlearning = cfg.resuming_after_unlearning.unlearning_epochs
-        unlearning_config = f"fl_{frozen_layers}_lr{learning_rate_unlearning}_e_{epochs_unlearning}"
+        # unlearning_config = f"fl_{frozen_layers}_lr{learning_rate_unlearning}_e_{epochs_unlearning}"
+        if algorithm not in ["projected_ga"]:
+            unlearning_config = f"fl_{frozen_layers}_lr{learning_rate_unlearning}_e_{epochs_unlearning}"
+        else:
+            early_stopping_threshold_pga = cfg.resuming_after_unlearning.early_stopping_threshold
+            unlearning_config = f"fl_{frozen_layers}_lr{learning_rate_unlearning}_e_{epochs_unlearning}_threshold_{early_stopping_threshold_pga}"
 
     if restart_training:
         if resume_training:
@@ -223,6 +233,17 @@ def main(cfg: DictConfig) -> None:
         #     else:
         #         per_class_mean_output[label].fill(1/total_classes)
         # print(per_class_mean_output)
+
+        # for projected ga
+        if t == SAVE_ROUND_CLIENTS:
+            location = os.path.join(model_checkpoint_dir, f"client_models_R{t}", f"client{cid}")
+            print(f"[Client {cid}] Saving model checkpoint at {location}")
+            exist = os.path.exists(location)
+            if not exist:
+                os.makedirs(location)
+
+            local_model.save(location)
+
         return local_model.get_weights(), amount_of_local_examples, per_class_mean_output
 
     config_dir = os.path.join(f"{dataset}_{alpha_dirichlet_string}",
@@ -274,12 +295,12 @@ def main(cfg: DictConfig) -> None:
     max_accuracy = 0
 
     test_loss, test_acc = server_model.evaluate(ds_test)
-    if resumed_round == 0:
+    # if resumed_round == 0:
         # logging global model performance before the training starts
-        with test_summary_writer_acc.as_default():
-            tf.summary.scalar('accuracy', test_acc, step=0)
-        with test_summary_writer_loss.as_default():
-            tf.summary.scalar('loss', test_loss, step=0)
+        # with test_summary_writer_acc.as_default():
+        #     tf.summary.scalar('accuracy', test_acc, step=0)
+        # with test_summary_writer_loss.as_default():
+        #     tf.summary.scalar('loss', test_loss, step=0)
     # if dataset in ["cifar20"]:
     #     test_loss, test_acc = server_model.evaluate(ds_test_df)
     #     with test_summary_writer_acc.as_default():
@@ -292,6 +313,7 @@ def main(cfg: DictConfig) -> None:
     #     with test_summary_writer_loss.as_default():
     #         tf.summary.scalar('loss_dr', test_loss, step=0)
 
+    retrained_computed = False
     for r in range(resumed_round + 1, resumed_round + total_rounds + 1):
         delta_w_aggregated = tf.nest.map_structure(lambda a, b: a - b,
                                                    server_model.get_weights(),
@@ -351,10 +373,10 @@ def main(cfg: DictConfig) -> None:
 
         # logging global model performance
         test_loss, test_acc = server_model.evaluate(ds_test)
-        with test_summary_writer_acc.as_default():
-            tf.summary.scalar('accuracy', test_acc, step=r)
-        with test_summary_writer_loss.as_default():
-            tf.summary.scalar('loss', test_loss, step=r)
+        # with test_summary_writer_acc.as_default():
+        #     tf.summary.scalar('accuracy', test_acc, step=r)
+        # with test_summary_writer_loss.as_default():
+        #     tf.summary.scalar('loss', test_loss, step=r)
         print(f'[Server] Round {r} -- Test accuracy: {test_acc}')
         # if dataset in ["cifar20"]:
         #     test_loss, test_acc = server_model.evaluate(ds_test_df)
@@ -381,6 +403,7 @@ def main(cfg: DictConfig) -> None:
 
                 server_model.save(os.path.join(model_checkpoint_dir, "last_checkpoint", f"R_{r}"))
         elif save_checkpoint == "save_all":
+            print("Saving checkpoint...")
             if resume_training:  # need for all the checkpoints for the analysis
                 checkpoint_frequency = 1
             if r % checkpoint_frequency == 0:
@@ -392,9 +415,10 @@ def main(cfg: DictConfig) -> None:
                         if not resume_training:
                             shutil.rmtree(model_checkpoint_dir, ignore_errors=True)
                     first_time = False
+                print("Saving checkpoint global model......")
                 server_model.save(os.path.join(model_checkpoint_dir, "checkpoints", f"R_{r}"))
 
-        if retraining or resume_training:
+        if retraining:
             ds_train_client = load_client_datasets_from_files(
                 selected_client=int(unlearned_cid),
                 dataset=dataset,
@@ -406,19 +430,120 @@ def main(cfg: DictConfig) -> None:
             ds_train_client = ds_train_client.batch(local_batch_size,
                                                               drop_remainder=False)
             ds_train_client = ds_train_client.prefetch(tf.data.AUTOTUNE)
+
             print("[Server] Train acc ")
             loss, acc = server_model.evaluate(ds_train_client)
-            with train_summary_writer_acc.as_default():
-                tf.summary.scalar('accuracy', acc, step=r)
-            with train_summary_writer_loss.as_default():
-                tf.summary.scalar('loss', loss, step=r)
+        elif resume_training:
+            ds_train_client = load_client_datasets_from_files(
+                selected_client=int(unlearned_cid),
+                dataset=dataset,
+                total_clients=total_clients,
+                alpha=alpha,
+            )
+
+            ds_train_client = preprocess_ds_test(ds_train_client, dataset)
+            ds_train_client = ds_train_client.batch(local_batch_size,
+                                                              drop_remainder=False)
+            ds_train_client = ds_train_client.prefetch(tf.data.AUTOTUNE)
+
+            # -- retrained acc
+            if not retrained_computed and algorithm not in ["natural"]:
+                client_dir_r = os.path.join(f"client{unlearned_cid}", "checkpoints")
+
+                last_checkpoint_retrained = find_last_checkpoint(
+                    os.path.join("model_checkpoints_retrained", config_dir, client_dir_r))
+
+                model_checkpoint_dir_retrained = os.path.join("model_checkpoints_retrained",
+                                                    config_dir,
+                                                    client_dir_r,
+                                                    f"R_{last_checkpoint_retrained}")
+
+                model_retrained = create_model(dataset=dataset,
+                                     total_classes=total_classes)
+                model_retrained.load_weights(model_checkpoint_dir_retrained)
+                model_retrained.compile(optimizer='sgd',
+                              loss=tf.keras.losses.SparseCategoricalCrossentropy(
+                                  from_logits=True),
+                              metrics=['accuracy'])
+                print("----- Retrained model -----")
+                print("Test")
+                _, test_acc_retrained = model_retrained.evaluate(ds_test)
+                print("Train")
+                _, train_acc_retrained = model_retrained.evaluate(ds_train_client)
+                retrained_computed = False
+            # ----------------
+
+            print("[Server] Train acc ")
+            loss, acc = server_model.evaluate(ds_train_client)
+            # with train_summary_writer_acc.as_default():
+            #     tf.summary.scalar('accuracy', acc, step=r)
+            # with train_summary_writer_loss.as_default():
+            #     tf.summary.scalar('loss', loss, step=r)
             print("--- kl div on train data ---")
             # pred = tf.nn.softmax(server_model.predict(ds_train_client),
             #                      axis=1)
-            pred = server_model.predict(ds_train_client)
-            kl_div = compute_kl_div(pred, total_classes)
-            with train_summary_writer_kl_div.as_default():
-                tf.summary.scalar('kl_div', kl_div, step=r)
+            # pred = server_model.predict(ds_train_client)
+            # kl_div = compute_kl_div(pred, total_classes)
+            # with train_summary_writer_kl_div.as_default():
+            #     tf.summary.scalar('kl_div', kl_div, step=r)
+
+            if algorithm not in ["natural"] and test_acc > test_acc_retrained:
+                print("----- Reached test acc of retrained model -----")
+                print("Evaluating MIA success rates...")
+                n = 10000
+
+                first_time_r = True
+                for i in range(total_clients):
+                    if i != unlearned_cid:
+                        ds = load_client_datasets_from_files(
+                            selected_client=i,
+                            dataset=dataset,
+                            total_clients=total_clients,
+                            alpha=alpha,
+                        )
+                        if first_time_r:
+                            ds_retain = ds
+                            first_time_r = False
+                        else:
+                            ds_retain = ds.concatenate(ds_retain)
+
+                ds_retain = ds_retain.shuffle(60000).take(n)
+                ds_retain = preprocess_ds_test(ds_retain, dataset)
+                ds_retain = ds_retain.batch(128, drop_remainder=False)
+                ds_retain = ds_retain.cache()
+                ds_retain = ds_retain.prefetch(tf.data.AUTOTUNE)
+
+                # --- MIA Yeom et al.
+                yeom_mia_retrained = compute_yeom_mia(model_retrained,
+                                            train_data=ds_retain,
+                                            forget_data=ds_train_client)
+
+                # --- MIA Efficiency
+                results_mia = SVC_MIA(shadow_train=ds_retain,
+                                      shadow_test=ds_test,
+                                      target_train=ds_train_client,
+                                      target_test=None,
+                                      model=model_retrained)
+
+                mia_retrained = results_mia["confidence"] * 100
+
+                # --- MIA Yeom et al.
+                yeom_mia = compute_yeom_mia(server_model,
+                                            train_data=ds_retain,
+                                            forget_data=ds_train_client)
+
+                # --- MIA Efficiency
+                results_mia = SVC_MIA(shadow_train=ds_retain,
+                                      shadow_test=ds_test,
+                                      target_train=ds_train_client,
+                                      target_test=None,
+                                      model=server_model)
+
+                mia = results_mia["confidence"] * 100
+                print(f"[Retrained] yeom_mia: {yeom_mia_retrained}, song_mia: {mia_retrained}")
+                print(f"[Unlearned] yeom_mia: {yeom_mia}, song_mia: {mia}")
+                break
+
 
         else:  # regular training
             # saving checkpoints for the global model with best acc

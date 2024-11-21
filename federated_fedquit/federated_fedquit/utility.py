@@ -1,7 +1,7 @@
-import os
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
+# import os
+# import matplotlib.pyplot as plt
+# import seaborn as sns
+# import numpy as np
 import tensorflow as tf
 import tensorflow_datasets as tfds
 
@@ -10,43 +10,43 @@ from federated_fedquit.dataset import element_norm_cifar100, normalize_img, expa
     element_norm_cifar20, element_norm_cifar10_train
 from federated_fedquit.model import create_cnn_model, create_resnet18
 
-
-def draw_and_save_heatmap(np_array_data, alpha_string,
-                          chart_folder=os.path.join("charts"), mode="single_class",
-                          title="Accuracy After Unlearning"):
-    print("---- Drawing and saving chart ----")
-    plt.figure()
-
-    g = sns.heatmap(np_array_data, annot=True, cmap="Reds", fmt='.4f')
-
-    if mode == "all_class":
-        x_label = ""
-        ll = ["test", "train", "test", "train", "kl_div (o)", "kl_div (u)"]
-
-        # Hide major tick labels
-        # g.set_xticklabels('')
-        g.set_xticks(np.arange(0.5, len(ll), 1).tolist())
-        g.set_xticklabels(ll)
-
-
-    else:
-        x_label = "Class"
-        # title = "Accuracy After Unlearning"
-
-    filename = "heatmap_" + alpha_string + "_" + title.lower().replace(" ", "_") + ".pdf"
-    g.set_ylabel('Client', fontsize=18)
-    g.set_xlabel(x_label, fontsize=18)
-    g.set_title(title, fontsize=19, pad=20)
-
-    exist = os.path.exists(chart_folder)
-    if not exist:
-        os.makedirs(chart_folder)
-
-    g.get_figure().savefig(os.path.join(chart_folder, filename),
-                           format='pdf', bbox_inches='tight')
-    plt.show()
-    np.save(os.path.join(chart_folder, alpha_string + "_" + title.lower().replace(" ", "_")+".npy"), np_array_data)
-
+#
+# def draw_and_save_heatmap(np_array_data, alpha_string,
+#                           chart_folder=os.path.join("charts"), mode="single_class",
+#                           title="Accuracy After Unlearning"):
+#     print("---- Drawing and saving chart ----")
+#     plt.figure()
+#
+#     g = sns.heatmap(np_array_data, annot=True, cmap="Reds", fmt='.4f')
+#
+#     if mode == "all_class":
+#         x_label = ""
+#         ll = ["test", "train", "test", "train", "kl_div (o)", "kl_div (u)"]
+#
+#         # Hide major tick labels
+#         # g.set_xticklabels('')
+#         g.set_xticks(np.arange(0.5, len(ll), 1).tolist())
+#         g.set_xticklabels(ll)
+#
+#
+#     else:
+#         x_label = "Class"
+#         # title = "Accuracy After Unlearning"
+#
+#     filename = "heatmap_" + alpha_string + "_" + title.lower().replace(" ", "_") + ".pdf"
+#     g.set_ylabel('Client', fontsize=18)
+#     g.set_xlabel(x_label, fontsize=18)
+#     g.set_title(title, fontsize=19, pad=20)
+#
+#     exist = os.path.exists(chart_folder)
+#     if not exist:
+#         os.makedirs(chart_folder)
+#
+#     g.get_figure().savefig(os.path.join(chart_folder, filename),
+#                            format='pdf', bbox_inches='tight')
+#     plt.show()
+#     np.save(os.path.join(chart_folder, alpha_string + "_" + title.lower().replace(" ", "_")+".npy"), np_array_data)
+#
 
 def compute_kl_div(predictions, num_classes):
     kl = tf.keras.losses.KLDivergence()

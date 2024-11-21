@@ -1,11 +1,11 @@
 import torch
 import hydra
-from can_bad_teaching.dataset import *
-from can_bad_teaching.mia_svc import SVC_MIA
-from can_bad_teaching.model import ResNet18, ViT
-from can_bad_teaching.unlearn import *
-from can_bad_teaching.metrics import UnLearningScore, get_membership_attack_prob
-from can_bad_teaching.utils import *
+from centralized_fedquit.dataset import *
+from centralized_fedquit.mia_svc import SVC_MIA
+from centralized_fedquit.model import ResNet18, ViT
+from centralized_fedquit.unlearn import *
+from centralized_fedquit.metrics import UnLearningScore, get_membership_attack_prob
+from centralized_fedquit.utils import *
 from torch.utils.data import DataLoader
 import random
 import pandas as pd

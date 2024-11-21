@@ -47,14 +47,15 @@ learning_rate: 0.1  #mnist 0.01, cifar100 0.1
 retraining: False
 restart_training: True  # restart training from checkpoint
 resume_training: False
-seed: 1
+seed: 2
 unlearned_cid: 0
 
 resuming_after_unlearning:
-  algorithm: "logit"
-  unlearning_epochs: 1
+  algorithm: "projected_ga"
+  unlearning_epochs: 5
   unlearning_lr: 0.01
-  frozen_layers: 5
+  frozen_layers: 0
+  early_stopping_threshold: 6.0
 
 
 #dataset: "cifar20"

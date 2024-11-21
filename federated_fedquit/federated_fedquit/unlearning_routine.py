@@ -1,12 +1,8 @@
 import os
 import hydra
-import warnings
 import numpy as np
 import tensorflow as tf
-import tensorflow_datasets as tfds
 from omegaconf import DictConfig, OmegaConf
-import matplotlib as plt
-import seaborn as sns
 import pandas as pd
 from federated_fedquit.dataset import load_client_datasets_from_files, normalize_img, \
     get_string_distribution, expand_dims, load_selected_client_statistics, \
@@ -16,7 +12,8 @@ from federated_fedquit.model import create_cnn_model
 from federated_fedquit.model_kd_div import ModelKLDiv, ModelKLDivAdaptive, \
     ModelKLDivAdaptiveSoftmax, ModelCompetentIncompetentTeacher, ModelKLDivSoftmaxZero, \
     ModelKLDivLogitMin
-from federated_fedquit.utility import draw_and_save_heatmap, compute_kl_div, \
+from federated_fedquit.model_projected_ga import DistanceEarlyStopping, get_distance, custom_train_loop
+from federated_fedquit.utility import compute_kl_div, \
     create_model, get_test_dataset, preprocess_ds, preprocess_ds_test
 import json
 
@@ -92,7 +89,7 @@ def main(cfg: DictConfig) -> None:
 
     local_batch_size = cfg.local_batch_size
     total_clients = cfg.total_clients
-
+    alpha = cfg.alpha
     active_clients = cfg.active_clients
     local_epochs = cfg.local_epochs
 
@@ -100,6 +97,7 @@ def main(cfg: DictConfig) -> None:
 
     epochs_unlearning = cfg.unlearning_epochs
     learning_rate_unlearning = cfg.learning_rate_unlearning
+    early_stopping_threshold_pga = cfg.projected_ga.early_stopping_threshold
 
     model_string = "LeNet" if dataset in ["mnist"] else "ResNet18"
     config_dir = os.path.join(f"{dataset}_{alpha_dirichlet_string}",
@@ -109,6 +107,28 @@ def main(cfg: DictConfig) -> None:
         os.path.join("model_checkpoints", config_dir, "checkpoints"))
 
     model_checkpoint_dir = os.path.join("model_checkpoints", config_dir, "checkpoints", f"R_{last_checkpoint_retrained}")
+
+    def load_reference_model_for_pga(global_model, unlearning_client, config_dir, dataset, total_classes, total_clients):
+        last_checkpoint_retrained = find_last_checkpoint(
+            os.path.join("model_checkpoints", config_dir, "checkpoints"))
+        location = os.path.join("model_checkpoints", config_dir, f"client_models_R{last_checkpoint_retrained}",
+                                f"client{unlearning_client}")
+        unl_client_model = create_model(dataset=dataset, total_classes=total_classes)
+        unl_client_model.load_weights(location)
+        unl_client_weights = unl_client_model.get_weights()
+        global_weights = global_model.get_weights()
+        n = total_clients
+
+        pga_ref_model_weights = tf.nest.map_structure(lambda a, b: 1/(n-1) * (n*a - b),
+                                                   global_weights,
+                                                   unl_client_weights)
+
+        pga_ref_model = create_model(dataset=dataset, total_classes=total_classes)
+        pga_ref_model.set_weights(pga_ref_model_weights)
+        return pga_ref_model, unl_client_model
+
+
+
 
     def create_dict_for_results_list(algorithm,
                                      lr,
@@ -156,7 +176,8 @@ def main(cfg: DictConfig) -> None:
                                from_logits=True),
                            metrics=['accuracy'])
     list_dict =[]
-    for cid in range(0, 10):
+    for cid in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]:
+    # for cid in [4]:
         print(f"-------- [Client {cid}] --------")
         # loading client u's data
         client_train_ds = load_client_datasets_from_files(
@@ -208,6 +229,26 @@ def main(cfg: DictConfig) -> None:
             unlearning_model = ModelKLDivAdaptiveSoftmax(server_model, original_model)
         elif algorithm == "softmax_zero":
             unlearning_model = ModelKLDivSoftmaxZero(server_model, original_model)
+        elif algorithm == "projected_ga":
+            model_ref, unl_client_model = load_reference_model_for_pga(server_model, cid, config_dir, dataset, total_classes, total_clients)
+
+            dist_ref_random_lst = []
+            for _ in range(10):
+                FLNet = create_model(dataset=dataset, total_classes=total_classes)
+                dist_ref_random_lst.append(get_distance(model_ref, FLNet))
+
+            print(
+                f'Mean distance of Reference Model to random: {np.mean(dist_ref_random_lst)}')
+            threshold = np.mean(dist_ref_random_lst) / 3.0
+            print(f'Radius for model_ref: {threshold}')
+
+            unlearning_model = create_model(dataset=dataset, total_classes=total_classes)
+            unlearning_model.set_weights(model_ref.get_weights())
+            # The unlearning model is found
+            # starting from the weights of the model_ref
+            # unlearning_model = ModelProjectedGA(original_model=model_ref, ref_model=model_ref_copy, threshold=threshold)
+
+
         elif algorithm in ["ci", "ci_balanced"]:
             virtual_teacher = VirtualTeacher(num_classes=total_classes, config="fixed")
             unlearning_model = ModelCompetentIncompetentTeacher(server_model, original_model, virtual_teacher)
@@ -216,40 +257,64 @@ def main(cfg: DictConfig) -> None:
             unlearning_model = ModelKLDiv(server_model, virtual_teacher)
 
         print("---- Unlearning ----")
-        if dataset in ["mnist"]:
-            unlearning_model.model.conv1.trainable = False
-            unlearning_model.model.conv2.trainable = False
-            unlearning_model.model.dense1.trainable = False
-            unlearning_model.model.dense2.trainable = True
+        if algorithm not in ["projected_ga"]:
+            if dataset in ["mnist"]:
+                unlearning_model.model.conv1.trainable = False
+                unlearning_model.model.conv2.trainable = False
+                unlearning_model.model.dense1.trainable = False
+                unlearning_model.model.dense2.trainable = True
+            else:
+                if frozen_layers >= 1:
+                    unlearning_model.model.layer0.trainable = False
+                if frozen_layers >= 2:
+                    unlearning_model.model.layer1.trainable = False
+                if frozen_layers >= 3:
+                    unlearning_model.model.layer2.trainable = False
+                if frozen_layers >= 4:
+                    unlearning_model.model.layer3.trainable = False
+                if frozen_layers >= 5:
+                    unlearning_model.model.layer4.trainable = False
+                    unlearning_model.model.gap.trainable = True
+                unlearning_model.model.fully_connected.trainable = True
+
+        if algorithm not in ["projected_ga"]:
+            optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate_unlearning)
+            early_stopping_callback = tf.keras.callbacks.EarlyStopping(
+                monitor='loss',
+                restore_best_weights=True,
+                patience=3)
+            unlearning_model.compile(optimizer=optimizer,
+                                     loss=tf.keras.losses.KLDivergence(),
+                                     metrics=['accuracy'])
         else:
-            if frozen_layers >= 1:
-                unlearning_model.model.layer0.trainable = False
-            if frozen_layers >= 2:
-                unlearning_model.model.layer1.trainable = False
-            if frozen_layers >= 3:
-                unlearning_model.model.layer2.trainable = False
-            if frozen_layers >= 4:
-                unlearning_model.model.layer3.trainable = False
-            if frozen_layers >= 5:
-                unlearning_model.model.layer4.trainable = False
-                unlearning_model.model.gap.trainable = True
-            unlearning_model.model.fully_connected.trainable = True
+            clip_grad = 5.0  # as in the original paper
+            # distance_threshold_early_stopping = 2.2
+            distance_threshold_early_stopping = early_stopping_threshold_pga
+            # optimizer = tf.keras.optimizers.Adam(
+            #     learning_rate=learning_rate_unlearning,
+            #     clipnorm=clip_grad)
+            optimizer = tf.keras.optimizers.SGD(learning_rate=learning_rate_unlearning,
+                                                momentum=0.9,
+                                                clipnorm=clip_grad)
 
-        # optimizer = tf.keras.optimizers.experimental.SGD(learning_rate=learning_rate_unlearning)  # try 0.01 for ci
-        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate_unlearning)  # try 0.01 for ci
-        early_stopping_callback = tf.keras.callbacks.EarlyStopping(
-            monitor='loss',
-            restore_best_weights=True,
-            patience=3)
-        unlearning_model.compile(optimizer=optimizer,
-                                 loss=tf.keras.losses.KLDivergence(),
-                                 metrics=['accuracy'])
+            # early_stopping_callback = DistanceEarlyStopping(
+            #     reference_model=model_ref,
+            #     distance_threshold=distance_threshold_early_stopping
+            # )
 
-        unlearning_model.model.summary(show_trainable=True)
-        if algorithm in ["logit", "softmax", "fixed", "softmax_zero", "logit_min"]:
+            unlearning_model.compile(optimizer=optimizer,
+                                     loss=tf.keras.losses.SparseCategoricalCrossentropy(
+                                         from_logits=True),
+                                     metrics=['accuracy'])
+
+
+        if algorithm in ["logit", "softmax", "incorrect", "softmax_zero", "logit_min"]:
+            unlearning_model.model.summary(show_trainable=True)
             unlearning_model.fit(client_train_ds,
                                  epochs=epochs_unlearning,
                                  callbacks=[early_stopping_callback])
+        if algorithm in ["projected_ga"]:
+            custom_train_loop(unlearning_model, unl_client_model = unl_client_model, epochs=epochs_unlearning, optimizer=optimizer, train_dataset=client_train_ds, threshold=threshold, distance_early_stop=distance_threshold_early_stopping, model_ref=model_ref)
         elif algorithm in ["natural"]:
             print("Do nothing..")
 
@@ -288,7 +353,7 @@ def main(cfg: DictConfig) -> None:
                         selected_client=i,
                         dataset=dataset,
                         total_clients=total_clients,
-                        alpha=0.1,
+                        alpha=alpha,
                     )
                     if first_time:
                         ds_retain = ds
@@ -372,7 +437,11 @@ def main(cfg: DictConfig) -> None:
         else:
             acc_u_train = unlearning_model.evaluate(client_train_ds)
         results_dict["train_acc"] = acc_u_train
-        results_dict["name"] = f"{algorithm}_fl_{frozen_layers}_lr{learning_rate_unlearning}_e_{epochs_unlearning}"
+        if algorithm not in ["projected_ga"]:
+            name = f"{algorithm}_fl_{frozen_layers}_lr{learning_rate_unlearning}_e_{epochs_unlearning}"
+        else:
+            name = f"{algorithm}_fl_{frozen_layers}_lr{learning_rate_unlearning}_e_{epochs_unlearning}_threshold_{early_stopping_threshold_pga}"
+        results_dict["name"] = name
         results_dict["client"] = cid
         list_dict.append(results_dict)
         # pred = tf.nn.softmax(original_model.predict(client_train_ds), axis=1)
@@ -385,8 +454,11 @@ def main(cfg: DictConfig) -> None:
         # print(f"kl_div (unlearned): {kl_div}")
         # results_dict[]] = kl_div
 
-        print("[Server] Loading checkpoint... ")
-        unlearning_config = f"fl_{frozen_layers}_lr{learning_rate_unlearning}_e_{epochs_unlearning}"
+        print("[Server] Saving checkpoint... ")
+        if algorithm not in ["projected_ga"]:
+            unlearning_config = f"fl_{frozen_layers}_lr{learning_rate_unlearning}_e_{epochs_unlearning}"
+        else:
+            unlearning_config = f"fl_{frozen_layers}_lr{learning_rate_unlearning}_e_{epochs_unlearning}_threshold_{early_stopping_threshold_pga}"
         model_checkpoint_dir = os.path.join("model_checkpoints", config_dir, algorithm,
                                             unlearning_config,
                                             f"R_{last_checkpoint_retrained}_unlearned_client_{cid}")
@@ -394,7 +466,10 @@ def main(cfg: DictConfig) -> None:
         # model_to_save.set_weights(unlearning_model.get_weights())
         #
         # model_to_save.save(model_checkpoint_dir)
-        unlearning_model.model.save(model_checkpoint_dir)
+        if algorithm not in ["projected_ga"]:
+            unlearning_model.model.save(model_checkpoint_dir)
+        else:
+            unlearning_model.save(model_checkpoint_dir)
 
     df = pd.DataFrame(list_dict)
     print(df)

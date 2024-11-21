@@ -3,7 +3,7 @@ requires = ["poetry-core>=1.4.0"]
 build-backend = "poetry.masonry.api"
 
 [tool.poetry]
-name = "can_bad_teaching" # <----- Ensure it matches the name of your baseline directory containing all the source code
+name = "centralized_fedquit" # <----- Ensure it matches the name of your baseline directory containing all the source code
 version = "1.0.0"
 description = "Bad Teaching"
 license = "Apache-2.0"

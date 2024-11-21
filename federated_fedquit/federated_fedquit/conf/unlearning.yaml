@@ -5,7 +5,7 @@
 
 dataset: "cifar100"
 alpha: 0.1 # alpha = 0 --> 1 class per client, -1 homogeneous
-algorithm: "logit"  # logit or softmax or fixed or ci_balanced or ci or natural
+algorithm: "projected_ga"  # logit or softmax or fixed or ci_balanced or ci or natural
 local_batch_size: 32
 total_clients: 10
 total_rounds: 50
@@ -15,4 +15,8 @@ lr_decay: 0.998  # exponential decay per round
 frozen_layers: 0
 unlearning_epochs: 20
 learning_rate_unlearning: 0.0001
-seed: 1
+seed: 2
+
+projected_ga:
+  early_stopping_threshold: 6.0
+

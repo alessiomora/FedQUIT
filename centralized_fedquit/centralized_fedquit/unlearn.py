@@ -1,9 +1,9 @@
 import torch
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
-from can_bad_teaching.dataset import UnLearningData
+from centralized_fedquit.dataset import UnLearningData
 import numpy as np
-from can_bad_teaching.utils import *
+from centralized_fedquit.utils import *
 
 
 class EarlyStopper:
