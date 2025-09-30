@@ -5,6 +5,18 @@ See folder `federated_fedquit`.
 ## Overview of FedQUIT
 ![Visualization of FedQUIT method](federated_fedquit/img/virtual_teacher.jpg)
 
+FedQUIT is a federated unlearning method that allows a client to remove its contribution
+(client or sample unlearning) from the global model directly on-device, without relying on stored historical updates or 
+auxiliary data. It introduces a lightweight teacher–student framework where the output of the
+current global model is modified to generate a "quasi-competent virtual teacher".
+This virtual teacher lowers the true-class score on forget data 
+while preserving the relative geometry among outputs of non-true classes.
+The unlearned model is locally trained to mimim the virtual teacher's output on forget (local) data.
+
+This design provides a controlled forgetting signal while retaining useful knowledge, 
+allowing regular FedAvg training to resume seamlessly. Compared to retraining from scratch 
+and six state-of-the-art unlearning baselines, FedQUIT achieves superior forgetting efficacy 
+with substantially reduced communication and computation overhead.
 
 ## Preliminaries
 The simulation code in this repository mainly leverages TensorFlow (TF). 
@@ -29,6 +41,9 @@ You can then install any Python version with `pyenv install <python-version>`
 (e.g. `pyenv install 3.9.17`) and set that version as the one to be used. 
 ```bash
 # cd to your federated_fedquit directory (i.e. where the `pyproject.toml` is)
+# if you cloned this repo, and you are in FedQUIT folder then do:
+cd federated_fedquit
+
 pyenv install 3.10.12
 
 pyenv local 3.10.12
