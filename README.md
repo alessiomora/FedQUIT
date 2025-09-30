@@ -5,6 +5,7 @@ See folder `federated_fedquit`.
 ## Overview of FedQUIT
 ![Visualization of FedQUIT method](federated_fedquit/img/virtual_teacher.jpg)
 
+
 ## Preliminaries
 The simulation code in this repository mainly leverages TensorFlow (TF). 
 Python virtual env is managed via Poetry.
