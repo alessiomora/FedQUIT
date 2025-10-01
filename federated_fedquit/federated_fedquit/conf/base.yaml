@@ -1,54 +1,20 @@
----
-# this is the config that will be loaded as default by main.py
-# Please follow the provided structure (this will ensuring all baseline follow
-# a similar configuration structure and hence be easy to customise)
-
-#dataset: "mnist"
-#alpha: -1  # alpha = 0 --> 1 class per client, -1 homogeneous
-#local_batch_size: 32
-#total_clients: 10
-#total_rounds: 22
-#active_clients: 1.0
-#local_epochs: 1
-#lr_decay: 0.998  # exponential decay per round
-#
-#resume_training: False
-#algorithm: "softmax"  # logit or softmax or fixed
-#retraining: False
-#best_round: 22
-#unlearned_cid: 6
-
-
-#dataset: "mnist"
-#alpha: 0.1  # alpha = 0 --> 1 class per client, -1 homogeneous
-#local_batch_size: 32
-#total_clients: 100
-#total_rounds: 30
-#active_clients: 1.0
-#local_epochs: 1
-#lr_decay: 0.998  # exponential decay per round
-#
-#resume_training: False
-#algorithm: "softmax"  # logit or softmax
-#retraining: True
-#best_round: 24
-#unlearned_cid: 0
-
-
 dataset: "cifar100"
+model: "ResNet18"  #or MitB0
 alpha: 0.1  # alpha = 0 --> 1 class per client, -1 homogeneous
 local_batch_size: 32
 total_clients: 10
-total_rounds: 10
+total_rounds: 1
 active_clients: 1.0
 local_epochs: 1
 lr_decay: 0.998  # exponential decay per round
-learning_rate: 0.1  #mnist 0.01, cifar100 0.1
+learning_rate: 0.1  #mnist 0.01, cifar100 0.1  # 3e-4
+#learning_rate: 3e-4
 retraining: False
 restart_training: True  # restart training from checkpoint
 resume_training: False
+sample_unlearning: False
 seed: 2
-unlearned_cid: 0
+unlearned_cid: [0]
 
 resuming_after_unlearning:
   algorithm: "projected_ga"
@@ -57,20 +23,18 @@ resuming_after_unlearning:
   frozen_layers: 0
   early_stopping_threshold: 6.0
 
+mode:
+  max_rounds: 60
+  deg_rounds: 56
+  learning_rate_guidance: 0.0005
 
-#dataset: "cifar20"
-#alpha: "baby"
-#local_batch_size: 32
-#total_clients: 10
-#total_rounds: 10
-#active_clients: 1.0
-#local_epochs: 1
-#lr_decay: 0.998
-#learning_rate: 0.1
-#restart_training: True
-#
-#resume_training: False
-#algorithm: "softmax"  # logit or softmax or fixed
-#retraining: False
-#best_round: 200
-#unlearned_cid: 0
+fedau:
+  coefficient: 0.04
+  learning_rate: 1e-1
+  epochs: 10
+
+fedosd:
+  lr_unlearning: 4e-4  # in the original paper, 4e-4 (regular lr 5e-2)
+  lr_recovery: 1e-6  # 1e-6
+  ur: 1
+  r: 10

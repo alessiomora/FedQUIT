@@ -1,10 +1,5 @@
 """Handle the dataset partitioning and (optionally) complex downloads.
 
-Please add here all the necessary logic to either download, uncompress, pre/post-process
-your dataset (or all of the above). If the desired way of running your baseline is to
-first download the dataset and partition it and then run the experiments, please
-uncomment the lines below and tell us in the README.md (see the "Running the Experiment"
-block) that this file should be executed first.
 """
 import hydra
 from hydra.core.hydra_config import HydraConfig
@@ -15,6 +10,8 @@ from collections import defaultdict
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
+import tensorflow_datasets as tfds
+# import tfds-nightly as tfds
 import numpy as np
 import shutil
 import sys
@@ -53,8 +50,11 @@ def download_and_preprocess(cfg: DictConfig) -> None:
     total_clients = cfg.total_clients
 
     folder = "federated_datasets"
+
     if dataset in ["cifar100"]:
         num_classes = 100
+    elif dataset in ["birds"]:
+        num_classes = 200
     else:
         num_classes = 10
 
@@ -76,6 +76,28 @@ def download_and_preprocess(cfg: DictConfig) -> None:
 
     elif dataset in ["cifar100"]:
         (x_train, y_train), (_, _) = tf.keras.datasets.cifar100.load_data()
+
+    elif dataset in ["birds"]:
+        # Keep order consistent with the partition generator (no shuffling!)
+        train_ds = tfds.load(
+            "caltech_birds2011",
+            split="train",
+            shuffle_files=False,
+            as_supervised=True,
+            try_gcs=True,  # <— use TFDS public GCS mirror instead of Drive
+        )
+
+        # Extract labels as a 1D numpy array of ints
+        y_train_list = []
+        x_train_list = []
+        for x, y in tfds.as_numpy(train_ds):
+            # Optional: resize to a common size (comment these two lines if you want original sizes)
+            x = tf.image.resize(tf.convert_to_tensor(x), size=(224, 224)).numpy()
+            x_train_list.append(x)
+            y_train_list.append(int(y))
+
+        y_train = np.array(y_train_list, dtype=np.int64)  # shape: (N,)
+        x_train = np.array(x_train_list, dtype=np.uint8)  # shape: (N, 224, 224, 3)
 
     # read the distribution of per-label examples for each client
     # from txt file

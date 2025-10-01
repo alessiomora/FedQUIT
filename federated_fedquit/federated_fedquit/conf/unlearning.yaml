@@ -1,11 +1,8 @@
 ---
-# this is the config that will be loaded as default by main.py
-# Please follow the provided structure (this will ensuring all baseline follow
-# a similar configuration structure and hence be easy to customise)
-
 dataset: "cifar100"
 alpha: 0.1 # alpha = 0 --> 1 class per client, -1 homogeneous
 algorithm: "projected_ga"  # logit or softmax or fixed or ci_balanced or ci or natural
+model: "ResNet18"
 local_batch_size: 32
 total_clients: 10
 total_rounds: 50
@@ -16,7 +13,11 @@ frozen_layers: 0
 unlearning_epochs: 20
 learning_rate_unlearning: 0.0001
 seed: 2
+sample_unlearning: False
 
 projected_ga:
   early_stopping_threshold: 6.0
 
+fedquit:
+  v: 0.0
+  loss: "kd"

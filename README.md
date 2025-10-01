@@ -61,6 +61,7 @@ poetry install
 # activate the environment
 poetry shell
 
+# we will install dependencies manually because we need some specific ones
 # intall tensorflow + cuda gpu support (retry again if error appears)
 pip install tensorflow[and-cuda]=="2.15.0.post1"
 
@@ -75,6 +76,12 @@ pip install ml-collections=="0.1.1"
 pip install tensorflow-hub=="0.14.0"
 pip install huggingface-hub=="0.17.3"
 pip install transformers=="4.34.0"
+# in the following we use --no-deps because we do not want to make tfds updated
+pip install --no-deps keras-cv=="0.8.2"
+pip install keras-core=="0.1.7"
+
+# results analysis
+pip install pandas=="2.3.3"
 ```
 
 ## Creating Client Datasets

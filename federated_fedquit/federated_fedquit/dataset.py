@@ -1,7 +1,5 @@
 """Handle dataset loading and preprocessing utility."""
 import os
-from typing import Union
-
 import keras_cv
 import numpy as np
 import tensorflow as tf
@@ -84,15 +82,6 @@ def element_norm_cifar10_train(image, label):
     return norm_layer(tf.cast(image, tf.float32) / 255.0), tf.squeeze(label)
 
 
-# def element_norm_cifar20_train(element):
-#     """Utility function to normalize input images."""
-#     norm_layer = tf.keras.layers.Normalization(mean=[0.5071, 0.4865, 0.4409],
-#                                                variance=[np.square(0.2673),
-#                                                          np.square(0.2564),
-#                                                          np.square(0.2762)])
-#     return norm_layer(tf.cast(element["image"], tf.float32) / 255.0), element["coarse_label"]
-
-
 class PaddedRandomCrop(keras_cv.layers.BaseImageAugmentationLayer):
     def __init__(self, seed=None, **kwargs):
         super().__init__(**kwargs)
@@ -116,6 +105,7 @@ def get_string_distribution(alpha: float,):
     return alpha_dirichlet_string
 
 
+
 def load_selected_client_statistics(
         selected_client: int,
         alpha: float,
@@ -128,6 +118,11 @@ def load_selected_client_statistics(
     could be done directly by doing len(ds.to_list()) but it's more expensive at run
     time.
     """
+    if dataset in ["cifar100-transformer"]:
+        dataset = "cifar100"
+    elif dataset in ["birds-transformer"]:
+        dataset = "birds"
+
     if dataset in ["cifar20"]:
         if selected_client == 0:
             return 500
@@ -149,6 +144,10 @@ def load_selected_client_statistics(
 
 
 def load_selected_clients_statistics(selected_clients, alpha, dataset, total_clients):
+    if dataset in ["cifar100-transformer"]:
+        dataset = "cifar100"
+    elif dataset in ["birds-transformer"]:
+        dataset = "birds"
     if dataset in ["cifar20"]:
         n = int((50000 - 500) / 9)
         local_examples_all_clients = np.array([500, n, n, n, n, n, n, n, n, n])
@@ -164,10 +163,16 @@ def load_selected_clients_statistics(selected_clients, alpha, dataset, total_cli
     )
     smpls_loaded = np.load(path)
     local_examples_all_clients = np.sum(smpls_loaded, axis=1)
+    if type(selected_clients) == list:
+        return local_examples_all_clients[selected_clients]
     return local_examples_all_clients[selected_clients.tolist()]
 
 
 def load_label_distribution(alpha, dataset, total_clients):
+    if dataset in ["cifar100-transformer"]:
+        dataset = "cifar100"
+    elif dataset in ["birds-transformer"]:
+        dataset = "birds"
     if dataset in ["cifar20"]:
         n = int((50000 - 500) / 9)
         smpls_loaded = np.array([500, n, n, n, n, n, n, n, n, n])
@@ -191,6 +196,7 @@ def load_label_distribution_selected_client(selected_client, alpha, dataset, tot
     return smpls_loaded[selected_client]
 
 
+
 def load_client_datasets_from_files(  # pylint: disable=too-many-arguments
         # pylint: disable=too-many-locals
         selected_client: int,
@@ -199,33 +205,20 @@ def load_client_datasets_from_files(  # pylint: disable=too-many-arguments
         total_clients: int = 100,
         alpha: float = 0.3,
         split: str = "train",
-        cifar20_case: str = "rocket",
 ):
     """Load the partition of the dataset for the sampled client.
 
     Sampled client represented by its client_id.
     Returns a batched dataset.
     """
-    if dataset in ["cifar20"]:
-        path = os.path.join(
-            "federated_datasets",
-            dataset,
-            str(total_clients),
-            cifar20_case,
-            split,
-        )
-
-        loaded_ds = tf.data.Dataset.load(
-            path=os.path.join(path, str(selected_client)),
-            element_spec=None,
-            compression=None,
-            reader_func=None,
-        )
-        return loaded_ds
+    if dataset in ["cifar100-transformer"]:
+        dataset = "cifar100"
+    if dataset in ["birds-transformer"]:
+        dataset = "birds"
 
     alpha_dirichlet_string = get_string_distribution(alpha)
     path = os.path.join(
-        "federated_datasets",
+        f"federated_datasets",
         dataset,
         str(total_clients),
         alpha_dirichlet_string,
@@ -239,3 +232,4 @@ def load_client_datasets_from_files(  # pylint: disable=too-many-arguments
         reader_func=None,
     )
     return loaded_ds
+
