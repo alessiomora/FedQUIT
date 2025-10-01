@@ -110,13 +110,13 @@ python -m federated_fedquit.dataset_preparation dataset="birds" alpha=0.1 total_
 ## Running the Simulations
 We prepared four scripts to run the main experiments reported in the paper.
 Before running the scripts, note the following:
-* Note that this scripts save model checkpoints on disk (it can occupy 20-40 GB in total depending on the frequency of checkpoint).
+* Note that these scripts save model checkpoints on disk (it can occupy 20-40 GB in total depending on the frequency of checkpoint).
 * The model checkpoints for regular training (Original baseline) will be saved in a new folder `model_checkpoints/<dataset_config>/<training_config>`.
 * The model checkpoints for the Retrain baseline will be saved in a new folder `model_checkpoint_retrained/<dataset_config>/<training_config>`. 
 * The model checkpoints after unlearning, before recovery (post-unlearning in the paper) will be saved in `model_checkpoints/<dataset_config>/<training_config>/<baseline>`.
-* In particular, for FedQUIT in `model_checkpoints/<dataset_config>/<training_config>/<logit_v_<v_tuning_kd_loss_choiche>`.
+* In particular, for FedQUIT in `model_checkpoints/<dataset_config>/<training_config>/<v_tuning_kd_loss_choiche>`.
 * The model checkpoints for the recovery, after unlearning running FL rounds until model utility is recovered will be saved in `model_checkpoints_resumed/<dataset_config>/<training_config>/<baseline>`.
-* In particular, for FedQUIT in `model_checkpoints_resumed/<dataset_config>/<training_config>/<logit_v_<v_tuning_kd_loss_choiche>`.
+* In particular, for FedQUIT in `model_checkpoints_resumed/<dataset_config>/<training_config>/<v_tuning_kd_loss_choiche>`.
 * Note that we run simulations for each client working as the target client (one Original model, K Retrain models with K clients, K post-unlearning models, K post-recovery models).
 * Each of the provided scripts below, run the following: (1) Train the Original model; (2) Train K Retrain models; (3) Generate K unlearned models via FedQUIT (with default config described in the paper); (4) Run the recovery phases and generate K post-recovery models.
 ```bash
