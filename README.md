@@ -89,12 +89,13 @@ To exactly reproduce the label distribution we used in the paper run the followi
 Note that we use the txt files in `client_data` folder to make deterministic the partition.
 
 ```bash
+python -m federated_fedquit.dataset_preparation dataset="cifar10" alpha=0.3 total_clients=10
+
 python -m federated_fedquit.dataset_preparation dataset="cifar100" alpha=0.1 total_clients=10
 
 ## For IID data, we alpha==-1 as below
 python -m federated_fedquit.dataset_preparation dataset="cifar100" alpha=-1 total_clients=10
 
-python -m federated_fedquit.dataset_preparation dataset="cifar10" alpha=0.3 total_clients=10
 
 ## For CUB-200 dataset, we informally call it "birds" in this repository
 python -m federated_fedquit.dataset_preparation dataset="birds" alpha=0.1 total_clients=10
@@ -113,11 +114,12 @@ Before running the scripts, note the following:
 * Note that we run simulations for each client working as the target client (one Original model, K Retrain models with K clients, K post-unlearning models, K post-recovery models).
 * Each of the provided scripts below, run the following: (1) Train the Original model; (2) Train K Retrain models; (3) Generate K unlearned models via FedQUIT (with default config described in the paper); (4) Run the recovery phases and generate K post-recovery models.
 ```bash
-bash ./federated_fedquit/simulation_manager_cifar10.sh
+bash ./federated_fedquit/simulation_manager_cifar10_resnet18.sh
 
-bash ./federated_fedquit/simulation_manager_cifar100_niid.sh
+# this includes both IID and non-IID config
+bash ./federated_fedquit/simulation_manager_cifar100_resnet18.sh
 
-bash ./federated_fedquit/simulation_manager_cifar100_iid.sh
+bash ./federated_fedquit/simulation_manager_cifar100_mitb0.sh
 
-bash ./federated_fedquit/simulation_manager_cub200.sh
+bash ./federated_fedquit/simulation_manager_cub200._mitb0.sh
 ```
