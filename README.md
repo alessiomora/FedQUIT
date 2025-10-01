@@ -102,7 +102,7 @@ python -m federated_fedquit.dataset_preparation dataset="birds" alpha=0.1 total_
 ```
 
 ## Running the Simulations
-We prepared three scripts to run the experiments reported in the paper.
+We prepared four scripts to run the main experiments reported in the paper.
 Before running the scripts, note the following:
 * Note that this scripts save model checkpoints on disk (it can occupy 20-40 GB in total depending on the frequency of checkpoint).
 * The model checkpoints for regular training (Original baseline) will be saved in a new folder `model_checkpoints/<dataset_config>/<training_config>`.
@@ -123,3 +123,10 @@ bash ./federated_fedquit/simulation_manager_cifar100_mitb0.sh
 
 bash ./federated_fedquit/simulation_manager_cub200._mitb0.sh
 ```
+## FedQUIT Unlearning Implementation
+The implementation of FedQUIT can be found in `federated_fedquit/fedquit_training`.
+In particular, the class class `ModelFedQuitLogitDynamic` provides the data-adaptive versions FedQUIT,
+and if instantiated with `dynamic_v=True` and `dynamic_type="min"`, it provides the default implementation
+described in the paper, with the true-class logit set to the per-sample minimum logit 
+produced by the original global model on forget data.
+
