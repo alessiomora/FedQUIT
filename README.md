@@ -62,6 +62,12 @@ poetry install
 poetry shell
 
 # we will install dependencies manually because we need some specific ones
+# the following can be also installed directly in one command
+# running our script install_dependencies.sh
+# with
+# bash ./install_dependencies.sh
+# otherwise install one by one as below:
+
 # intall tensorflow + cuda gpu support (retry again if error appears)
 pip install tensorflow[and-cuda]=="2.15.0.post1"
 
